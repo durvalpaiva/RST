@@ -13,9 +13,14 @@ load_dotenv()
 def init_firebase():
     if not firebase_admin._apps:
         try:
+            # Debug: mostrar secrets disponíveis
+            if hasattr(st, 'secrets'):
+                available_secrets = list(st.secrets.keys()) if st.secrets else []
+                st.info(f"🔍 Secrets disponíveis: {available_secrets}")
+            
             # Tentar usar secrets do Streamlit Cloud primeiro (para produção)
-            try:
-                if 'firebase' in st.secrets:
+            if hasattr(st, 'secrets') and 'firebase' in st.secrets:
+                try:
                     firebase_config = {
                         "type": st.secrets["firebase"]["type"],
                         "project_id": st.secrets["firebase"]["project_id"],
@@ -25,14 +30,21 @@ def init_firebase():
                         "client_id": st.secrets["firebase"]["client_id"],
                         "auth_uri": st.secrets["firebase"]["auth_uri"],
                         "token_uri": st.secrets["firebase"]["token_uri"],
+                        "auth_provider_x509_cert_url": st.secrets["firebase"]["auth_provider_x509_cert_url"],
+                        "client_x509_cert_url": st.secrets["firebase"]["client_x509_cert_url"]
                     }
                     cred = credentials.Certificate(firebase_config)
-                else:
-                    raise KeyError("No secrets found")
-            except:
+                    st.success("🔥 Usando secrets do Streamlit Cloud")
+                except Exception as e:
+                    st.error(f"Erro ao usar secrets: {e}")
+                    raise
+            else:
                 # Para desenvolvimento local usando .env
+                st.warning("⚠️ Secrets do Streamlit não encontrados, usando .env local")
                 firebase_private_key = os.getenv("FIREBASE_PRIVATE_KEY")
                 if not firebase_private_key:
+                    st.error("❌ FIREBASE_PRIVATE_KEY não encontrada no .env")
+                    st.info("💡 Configure os secrets no Streamlit Cloud: Settings > Secrets")
                     raise ValueError("FIREBASE_PRIVATE_KEY não encontrada no .env")
                 
                 firebase_config = {
@@ -47,7 +59,15 @@ def init_firebase():
                 }
                 cred = credentials.Certificate(firebase_config)
             
-            firebase_admin.initialize_app(cred)
+            # Inicializar Firebase com storage bucket
+            if 'general' in st.secrets and 'storage_bucket' in st.secrets['general']:
+                firebase_admin.initialize_app(cred, {
+                    'storageBucket': st.secrets['general']['storage_bucket']
+                })
+            else:
+                firebase_admin.initialize_app(cred, {
+                    'storageBucket': 'apprst-baa01.firebasestorage.app'
+                })
             
         except Exception as e:
             st.error(f"Erro ao inicializar Firebase: {e}")
