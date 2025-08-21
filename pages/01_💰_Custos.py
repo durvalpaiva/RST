@@ -188,6 +188,13 @@ if st.session_state.show_form:
                 help=f"Categoria específica de {tipo_custo.lower()}"
             )
             
+            # Campo obrigatório para descrição do produto/serviço
+            descricao_item = st.text_input(
+                "📦 Descrição do Produto/Serviço *",
+                placeholder="Ex: Adubo NPK 10-10-10, Consultoria agronômica...",
+                help="Nome específico do produto ou serviço adquirido"
+            )
+            
             valor = st.number_input(
                 "💰 Valor (R$)",
                 min_value=0.01,
@@ -279,7 +286,7 @@ if st.session_state.show_form:
         submitted = st.form_submit_button(f"💾 Salvar {tipo_custo}", use_container_width=True)
     
         if submitted:
-            if valor > 0:
+            if valor > 0 and descricao_item.strip():
                 try:
                     # Upload da imagem se fornecida
                     if uploaded_file:
@@ -297,6 +304,7 @@ if st.session_state.show_form:
                         'tipo_custo': tipo_custo,
                         'categoria': categoria,
                         'categoria_nome': categorias[categoria],
+                        'descricao_item': descricao_item.strip(),
                         'valor': float(valor),
                         'fornecedor': fornecedor.strip() if fornecedor else '',
                         'numero_nf': numero_nf.strip() if numero_nf else '',
@@ -340,7 +348,10 @@ if st.session_state.show_form:
                 except Exception as e:
                     st.error(f"❌ Erro ao salvar: {e}")
             else:
-                st.warning("⚠️ Informe um valor maior que zero!")
+                if valor <= 0:
+                    st.warning("⚠️ Informe um valor maior que zero!")
+                if not descricao_item.strip():
+                    st.warning("⚠️ A descrição do produto/serviço é obrigatória!")
 
 # Tabela filtrada com dados dos custos
 st.subheader("📊 Dados dos Custos - Tabela Filtrável")
@@ -357,6 +368,7 @@ if custos_mes:
         'data_formatada': 'Data',
         'tipo_custo': 'Tipo',
         'categoria_nome': 'Categoria',
+        'descricao_item': 'Produto/Serviço',
         'valor': 'Valor (R$)',
         'fornecedor': 'Fornecedor',
         'numero_nf': 'Nº NF',
@@ -379,7 +391,7 @@ if custos_mes:
         colunas_selecionadas = st.multiselect(
             "📋 Colunas para Exibir",
             options=list(colunas_disponiveis.keys()),
-            default=['data_formatada', 'tipo_custo', 'categoria_nome', 'valor', 'fornecedor'],
+            default=['data_formatada', 'tipo_custo', 'categoria_nome', 'descricao_item', 'valor', 'fornecedor'],
             format_func=lambda x: colunas_disponiveis[x],
             help="Escolha quais colunas mostrar na tabela"
         )
@@ -459,6 +471,7 @@ if custos_mes:
                 data_formatada = datetime.fromisoformat(custo['data']).strftime('%d/%m')
                 valor = custo.get('valor', 0)
                 categoria = custo.get('categoria_nome', 'N/A')
+                descricao = custo.get('descricao_item', 'Sem descrição')
                 
                 # Ícone baseado no tipo
                 if tipo == 'Custos Fixos':
@@ -476,7 +489,8 @@ if custos_mes:
                     <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; 
                                 border-left: 4px solid {cor}; margin-bottom: 0.5rem;">
                         <h4>{icon} {data_formatada} - {categoria}</h4>
-                        <p><strong>R$ {valor:.2f}</strong></p>
+                        <p><strong>📦 {descricao}</strong></p>
+                        <p><strong>💰 R$ {valor:.2f}</strong></p>
                         <p><em>{custo.get('observacoes', 'Sem observações')}</em></p>
                         {f'<p><small>📉 Depreciação mensal: R$ {custo.get("depreciacao_mensal", 0):.2f}</small></p>' if tipo == 'Investimentos' and custo.get('depreciacao_mensal') else ''}
                     </div>
