@@ -93,8 +93,9 @@ if st.button("🔥 Teste: Adicionar dados ao Firebase"):
     if db:
         try:
             # Adicionar documento de teste
+            from datetime import datetime
             test_data = {
-                'timestamp': st.timestamp,
+                'timestamp': datetime.now().isoformat(),
                 'app': 'RST',
                 'status': 'teste_funcionando',
                 'versao': '1.0.0'
@@ -133,23 +134,116 @@ if st.button("📖 Teste: Ler dados do Firebase"):
     else:
         st.error("❌ Firebase não conectado")
 
-# Instruções para próximos passos
-st.subheader("📋 Próximos Passos")
-st.info("""
-💡 **Funcionalidades básicas funcionando!** 
+# Roadmap e próximos passos
+st.subheader("🗺️ Roadmap de Desenvolvimento")
 
-**Para continuar o desenvolvimento:**
-1. ✅ Firebase configurado e conectado
-2. ✅ Estrutura básica criada
-3. 🔄 Teste as funcionalidades acima
-4. 📱 Teste no celular acessando a URL do app
-5. 🚀 Pronto para adicionar páginas específicas (custos, produção, vendas)
+# Status atual
+st.success("✅ **Status Atual:** Sistema base funcionando - Firebase conectado!")
 
-**Como executar localmente:**
-```bash
-streamlit run streamlit_app.py
-```
-""")
+# Abas para organizar informações
+tab1, tab2, tab3 = st.tabs(["📋 Próximos Passos", "🎯 Funcionalidades Planejadas", "💡 Ideias Futuras"])
+
+with tab1:
+    st.markdown("""
+    ### 🚀 Próximas Implementações (Prioridade Alta)
+    
+    **📊 Sistema de Custos (Expandir)**
+    - [ ] Categorização avançada (Fixos, Variáveis, Semi-variáveis)
+    - [ ] Análise de tendências e gráficos temporais
+    - [ ] Comparativo mensal/anual
+    - [ ] Alertas de gastos excessivos
+    
+    **📱 Produção e Lotes**
+    - [ ] Cadastro e controle de lotes/talhões
+    - [ ] Acompanhamento de plantio → colheita
+    - [ ] Controle de aplicações (defensivos, fertilizantes)
+    - [ ] Histórico produtivo por área
+    
+    **💰 Sistema de Vendas**
+    - [ ] Registro de vendas e recebimentos
+    - [ ] Controle de clientes e contratos
+    - [ ] Relatórios de rentabilidade por cultura
+    - [ ] Fluxo de caixa projetado
+    """)
+
+with tab2:
+    st.markdown("""
+    ### 🎯 Módulos Planejados
+    
+    **🌾 Gestão Agrícola**
+    - Calendário agrícola e cronograma de atividades
+    - Controle de estoque (sementes, defensivos, fertilizantes)
+    - Monitoramento climático integrado
+    - Controle de máquinas e implementos
+    
+    **👥 Gestão de Pessoas**
+    - Controle de funcionários e prestadores
+    - Registro de horas trabalhadas
+    - Controle de EPIs e treinamentos
+    
+    **📈 Business Intelligence**
+    - Dashboard executivo com KPIs principais
+    - Análise de rentabilidade por hectare
+    - Comparativo com índices do setor
+    - Projeções e simulações de cenários
+    
+    **🔄 Integrações**
+    - API de cotações (CEPEA, CME)
+    - Dados meteorológicos (INMET)
+    - Bancos para conciliação financeira
+    """)
+
+with tab3:
+    st.markdown("""
+    ### 💡 Ideias para o Futuro
+    
+    **🤖 Automação e IA**
+    - Reconhecimento de notas fiscais por OCR
+    - Previsões de produtividade com ML
+    - Chatbot para consultas rápidas
+    - Recomendações automáticas de manejo
+    
+    **📊 Analytics Avançado**
+    - Mapas de produtividade georeferenciados
+    - Análise de imagens de satélite
+    - Correlação clima x produtividade
+    - Benchmarking com outras propriedades
+    
+    **💼 Expansão do Negócio**
+    - Módulo para consultoria agronômica
+    - Marketplace de insumos
+    - Sistema multi-fazenda
+    - App mobile nativo
+    """)
+
+# Informações técnicas
+st.subheader("🔧 Informações Técnicas")
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("""
+    **📚 Stack Tecnológica:**
+    - Frontend: Streamlit
+    - Backend: Firebase Firestore
+    - Storage: Firebase Storage
+    - Deploy: Streamlit Cloud
+    - Language: Python 3.9+
+    """)
+
+with col2:
+    st.markdown("""
+    **🚀 Como Contribuir:**
+    ```bash
+    # Executar localmente
+    streamlit run main.py
+    
+    # Testar Firebase
+    python test_firebase.py
+    ```
+    """)
+
+# Call to action
+st.info("💬 **Feedback e Sugestões:** Sua opinião é fundamental para priorizar as próximas funcionalidades!")
 
 # Footer
 st.markdown("---")
