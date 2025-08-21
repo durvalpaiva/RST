@@ -60,7 +60,7 @@ def init_firebase():
                 cred = credentials.Certificate(firebase_config)
             
             # Inicializar Firebase com storage bucket
-            if 'general' in st.secrets and 'storage_bucket' in st.secrets['general']:
+            if hasattr(st, 'secrets') and 'general' in st.secrets and 'storage_bucket' in st.secrets['general']:
                 firebase_admin.initialize_app(cred, {
                     'storageBucket': st.secrets['general']['storage_bucket']
                 })
