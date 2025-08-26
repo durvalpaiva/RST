@@ -113,35 +113,51 @@ def get_custos_mes_atual():
         return []
 
 # Função para buscar fornecedores ativos
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=30)  # Cache menor para atualizar mais rápido
 def get_fornecedores_ativos():
     try:
-        docs = db.collection('fornecedores').where(
-            'ativo', '==', True
-        ).order_by('nome').stream()
+        # Buscar todos os fornecedores primeiro
+        docs = db.collection('fornecedores').stream()
         
         fornecedores = []
         for doc in docs:
             data = doc.to_dict()
-            fornecedores.append({
-                'nome': data.get('nome', ''),
-                'tipo': data.get('tipo_fornecedor', ''),
-                'telefone': data.get('telefone', ''),
-                'id': doc.id
-            })
+            # Considerar ativo se o campo não existir ou for True
+            ativo = data.get('ativo', True)  
+            
+            if ativo:  # Só adicionar se ativo
+                fornecedores.append({
+                    'nome': data.get('nome', ''),
+                    'tipo': data.get('tipo_fornecedor', ''),
+                    'telefone': data.get('telefone', ''),
+                    'id': doc.id
+                })
         
+        # Ordenar por nome
+        fornecedores.sort(key=lambda x: x['nome'].lower())
         return fornecedores
+        
     except Exception as e:
+        st.error(f"Erro ao buscar fornecedores: {e}")
         return []
 
 # Função para buscar fornecedor por nome (busca inteligente)
 def buscar_fornecedores(termo_busca):
     fornecedores = get_fornecedores_ativos()
-    if not termo_busca:
-        return fornecedores
+    
+    # Debug: mostrar quantos fornecedores foram encontrados
+    if not fornecedores:
+        st.warning("⚠️ Nenhum fornecedor encontrado no banco de dados")
+        return []
+    
+    if not termo_busca or termo_busca.strip() == "":
+        return fornecedores[:10]  # Limitar a 10 para não sobrecarregar
     
     termo = termo_busca.lower().strip()
-    return [f for f in fornecedores if termo in f['nome'].lower()]
+    # Busca mais flexível: busca por qualquer parte do nome
+    resultados = [f for f in fornecedores if termo in f['nome'].lower()]
+    
+    return resultados
 
 # Buscar custos do mês
 custos_mes = get_custos_mes_atual()
@@ -316,6 +332,25 @@ if st.session_state.show_form:
                 help="Busca inteligente entre fornecedores cadastrados",
                 label_visibility="collapsed"
             )
+            
+            # Debug: Botões para troubleshooting
+            col_debug1, col_debug2 = st.columns(2)
+            
+            with col_debug1:
+                if st.button("🔍 Debug: Listar fornecedores", help="Ver fornecedores cadastrados"):
+                    todos_fornecedores = get_fornecedores_ativos()
+                    if todos_fornecedores:
+                        st.success(f"✅ {len(todos_fornecedores)} fornecedores encontrados:")
+                        for f in todos_fornecedores:
+                            st.write(f"• **{f['nome']}** - {f['tipo']} - {f['telefone']}")
+                    else:
+                        st.error("❌ Nenhum fornecedor encontrado no banco")
+            
+            with col_debug2:
+                if st.button("🔄 Limpar Cache", help="Atualizar lista de fornecedores"):
+                    st.cache_data.clear()
+                    st.success("✅ Cache limpo! Tente buscar novamente.")
+                    st.rerun()
             
             # Buscar fornecedores
             fornecedores_encontrados = buscar_fornecedores(termo_busca)
