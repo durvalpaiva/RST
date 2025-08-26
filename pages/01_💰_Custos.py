@@ -346,66 +346,74 @@ if st.session_state.show_form:
         col_nf1, col_nf2 = st.columns(2)
         
         with col_nf1:
-            st.markdown("**🏪 Fornecedor**")
+            st.markdown("**🏪 Fornecedor (Obrigatório) ***")
             
-            # Busca inteligente de fornecedores
-            termo_busca = st.text_input(
-                "Digite para buscar fornecedor:",
-                placeholder="Digite parte do nome do fornecedor...",
-                help="Busca inteligente entre fornecedores cadastrados",
-                label_visibility="collapsed"
-            )
+            # Buscar todos os fornecedores ativos
+            todos_fornecedores = get_fornecedores_ativos()
             
-            
-            # Buscar fornecedores
-            fornecedores_encontrados = buscar_fornecedores(termo_busca)
-            fornecedor_selecionado = None
-            
-            if termo_busca and fornecedores_encontrados:
-                # Mostrar lista de fornecedores encontrados
-                st.markdown("**📋 Fornecedores encontrados:**")
-                for i, forn in enumerate(fornecedores_encontrados[:5]):  # Máximo 5 sugestões
-                    nome = forn['nome']
-                    tipo = forn['tipo']
-                    telefone = forn['telefone']
-                    
-                    col_info, col_btn = st.columns([3, 1])
-                    with col_info:
-                        st.markdown(f"**{nome}**")
-                        st.caption(f"{tipo} | {telefone}")
-                    with col_btn:
-                        if st.button("Selecionar", key=f"sel_forn_{i}", type="primary", use_container_width=True):
-                            st.session_state[f'fornecedor_selecionado'] = nome
-                            st.rerun()
+            if not todos_fornecedores:
+                st.error("❌ Nenhum fornecedor cadastrado!")
+                st.info("**📝 Para cadastrar fornecedores:** Vá na aba '🏪 Fornecedores'")
+                fornecedor_selecionado_id = None
+                fornecedor_nome = ""
+            else:
+                # Criar lista de opções para selectbox
+                opcoes_fornecedores = ["Selecione um fornecedor..."] + [f"{f['nome']} - {f['tipo']}" for f in todos_fornecedores]
                 
-                if len(fornecedores_encontrados) > 5:
-                    st.info(f"+ {len(fornecedores_encontrados) - 5} fornecedores. Refine a busca.")
+                # Selectbox para escolher fornecedor
+                escolha = st.selectbox(
+                    "Escolha o fornecedor:",
+                    options=range(len(opcoes_fornecedores)),
+                    format_func=lambda x: opcoes_fornecedores[x],
+                    help="Selecione um fornecedor cadastrado no sistema",
+                    label_visibility="collapsed"
+                )
+                
+                if escolha == 0:  # "Selecione um fornecedor..."
+                    fornecedor_selecionado_id = None
+                    fornecedor_nome = ""
+                    st.warning("⚠️ Selecione um fornecedor para continuar")
+                else:
+                    # Fornecedor selecionado
+                    fornecedor_selecionado = todos_fornecedores[escolha - 1]
+                    fornecedor_selecionado_id = fornecedor_selecionado['id']
+                    fornecedor_nome = fornecedor_selecionado['nome']
+                    
+                    # Mostrar detalhes do fornecedor selecionado
+                    st.success(f"✅ **{fornecedor_nome}**")
+                    st.caption(f"📞 {fornecedor_selecionado['telefone']} | 🏷️ {fornecedor_selecionado['tipo']}")
+                
+                # Campo de busca rápida (opcional)
+                st.markdown("**🔍 Busca Rápida (opcional):**")
+                termo_busca = st.text_input(
+                    "Digite para filtrar fornecedores:",
+                    placeholder="Digite parte do nome para filtrar...",
+                    help="Filtra a lista de fornecedores",
+                    label_visibility="collapsed"
+                )
+                
+                # Filtrar fornecedores se houver termo de busca
+                if termo_busca:
+                    fornecedores_filtrados = [f for f in todos_fornecedores if termo_busca.lower() in f['nome'].lower()]
+                    if fornecedores_filtrados:
+                        st.markdown("**📋 Fornecedores encontrados:**")
+                        for i, forn in enumerate(fornecedores_filtrados[:5]):
+                            col_info, col_btn = st.columns([3, 1])
+                            with col_info:
+                                st.markdown(f"**{forn['nome']}**")
+                                st.caption(f"{forn['tipo']} | {forn['telefone']}")
+                            with col_btn:
+                                if st.button("Usar", key=f"usar_forn_{i}", type="primary"):
+                                    # Encontrar o índice no selectbox
+                                    for idx, f in enumerate(todos_fornecedores):
+                                        if f['id'] == forn['id']:
+                                            st.session_state['fornecedor_escolhido'] = idx + 1
+                                            st.rerun()
+                    else:
+                        st.warning("❌ Nenhum fornecedor encontrado com este termo")
             
-            elif termo_busca and not fornecedores_encontrados:
-                st.warning(f"⚠️ Nenhum fornecedor encontrado com '{termo_busca}'")
-                if st.button("➕ Cadastrar Novo Fornecedor", type="secondary", use_container_width=True):
-                    st.markdown("""
-                    **📝 Para cadastrar um novo fornecedor:**
-                    1. Acesse a aba "🏪 Fornecedores" no menu lateral
-                    2. Clique em "Abrir Formulário"
-                    3. Preencha os dados do fornecedor
-                    4. Volte para registrar o custo
-                    """)
-            
-            # Campo final do fornecedor (preenchido automaticamente ou manual)
-            fornecedor_final = st.session_state.get('fornecedor_selecionado', '')
-            if not fornecedor_final:
-                fornecedor_final = termo_busca
-            
-            # Mostrar fornecedor selecionado
-            if fornecedor_final:
-                st.success(f"✅ Fornecedor: **{fornecedor_final}**")
-                if st.button("🔄 Alterar Fornecedor", type="secondary"):
-                    if 'fornecedor_selecionado' in st.session_state:
-                        del st.session_state['fornecedor_selecionado']
-                    st.rerun()
-            
-            fornecedor = fornecedor_final
+            # Definir variável final para o formulário
+            fornecedor = fornecedor_nome
         
         with col_nf2:
             numero_nf = st.text_input(
@@ -442,7 +450,7 @@ if st.session_state.show_form:
         submitted = st.form_submit_button(f"💾 Salvar {tipo_custo}", use_container_width=True)
     
         if submitted:
-            if valor > 0 and descricao_item.strip() and quantidade > 0 and valor_unitario > 0:
+            if valor > 0 and descricao_item.strip() and quantidade > 0 and valor_unitario > 0 and fornecedor.strip():
                 try:
                     # Upload da imagem se fornecida
                     if uploaded_file:
@@ -465,13 +473,14 @@ if st.session_state.show_form:
                         'unidade_medida': unidade_medida,
                         'valor_unitario': float(valor_unitario),
                         'valor': float(valor),
-                        'fornecedor': fornecedor.strip() if fornecedor else '',
+                        'fornecedor': fornecedor.strip(),
+                        'fornecedor_id': fornecedor_selecionado_id if 'fornecedor_selecionado_id' in locals() else '',
                         'numero_nf': numero_nf.strip() if numero_nf else '',
                         'imagem_nf_url': imagem_url or '',
                         'tem_nota_fiscal': bool(uploaded_file),
                         'observacoes': observacoes.strip(),
                         'timestamp': datetime.now().isoformat(),
-                        'app_version': 'RST_v2.2'
+                        'app_version': 'RST_v2.3'
                     }
                     
                     # Campos específicos para investimentos
@@ -515,6 +524,8 @@ if st.session_state.show_form:
                     st.warning("⚠️ A quantidade deve ser maior que zero!")
                 if valor_unitario <= 0:
                     st.warning("⚠️ O valor unitário deve ser maior que zero!")
+                if not fornecedor.strip():
+                    st.warning("⚠️ Selecione um fornecedor cadastrado no sistema!")
 
 # Tabela filtrada com dados dos custos
 st.subheader("📊 Dados dos Custos - Tabela Filtrável")
