@@ -474,8 +474,7 @@ if vendas_mes:
                             st.rerun()
                 
                 with col_btn2:
-                    if st.button(f"📄 Detalhes", key=f"det_{venda['id']}", use_container_width=True):
-                        st.json(venda)
+                    st.write("")  # Espaçamento
                 
                 with col_btn3:
                     if status == "Consignado":

@@ -22,14 +22,16 @@ st.markdown("""
         padding-top: 1rem;
     }
     .custo-card {
-        background-color: #f8f9fa;
+        background-color: #1a2e1a; /* Verde escuro */
+        color: #ffffff; /* Texto branco */
         padding: 1rem;
         border-radius: 0.5rem;
         border-left: 4px solid #dc3545;
         margin-bottom: 1rem;
     }
     .success-card {
-        background-color: #d4edda;
+        background-color: #1a2e1a; /* Verde escuro */
+        color: #ffffff; /* Texto branco */
         padding: 1rem;
         border-radius: 0.5rem;
         border-left: 4px solid #28a745;
