@@ -198,6 +198,29 @@ if st.button(
 ):
     st.session_state.show_form = not st.session_state.show_form
 
+# Debug: Botões para troubleshooting da busca de fornecedores (fora do formulário)
+if st.session_state.get('show_form', False):
+    st.markdown("**🔧 Ferramentas de Debug:**")
+    col_debug1, col_debug2 = st.columns(2)
+    
+    with col_debug1:
+        if st.button("🔍 Debug: Listar fornecedores", help="Ver fornecedores cadastrados"):
+            todos_fornecedores = get_fornecedores_ativos()
+            if todos_fornecedores:
+                st.success(f"✅ {len(todos_fornecedores)} fornecedores encontrados:")
+                for f in todos_fornecedores:
+                    st.write(f"• **{f['nome']}** - {f['tipo']} - {f['telefone']}")
+            else:
+                st.error("❌ Nenhum fornecedor encontrado no banco")
+    
+    with col_debug2:
+        if st.button("🔄 Limpar Cache", help="Atualizar lista de fornecedores"):
+            st.cache_data.clear()
+            st.success("✅ Cache limpo! Tente buscar novamente.")
+            st.rerun()
+    
+    st.markdown("---")
+
 # Mostrar formulário apenas se toggle estiver ativo
 if st.session_state.show_form:
     tipo_custo = st.selectbox(
@@ -333,24 +356,6 @@ if st.session_state.show_form:
                 label_visibility="collapsed"
             )
             
-            # Debug: Botões para troubleshooting
-            col_debug1, col_debug2 = st.columns(2)
-            
-            with col_debug1:
-                if st.button("🔍 Debug: Listar fornecedores", help="Ver fornecedores cadastrados"):
-                    todos_fornecedores = get_fornecedores_ativos()
-                    if todos_fornecedores:
-                        st.success(f"✅ {len(todos_fornecedores)} fornecedores encontrados:")
-                        for f in todos_fornecedores:
-                            st.write(f"• **{f['nome']}** - {f['tipo']} - {f['telefone']}")
-                    else:
-                        st.error("❌ Nenhum fornecedor encontrado no banco")
-            
-            with col_debug2:
-                if st.button("🔄 Limpar Cache", help="Atualizar lista de fornecedores"):
-                    st.cache_data.clear()
-                    st.success("✅ Cache limpo! Tente buscar novamente.")
-                    st.rerun()
             
             # Buscar fornecedores
             fornecedores_encontrados = buscar_fornecedores(termo_busca)
