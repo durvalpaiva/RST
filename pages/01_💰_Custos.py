@@ -689,8 +689,8 @@ if custos_mes:
                         valor_detalhes = f"💰 R$ {valor:.2f}"
                     
                     st.markdown(f"""
-                    <div style="background-color: #1a2e1a; color: #ffffff; padding: 1rem; border-radius: 0.5rem; 
-                                border-left: 4px solid {cor}; margin-bottom: 0.5rem;">
+                    <div style="background-color: #1e1e1e; border: 1px solid #2c2c2c; color: #ffffff; 
+                                padding: 1rem; border-radius: 0.5rem; border-left: 4px solid {cor}; margin-bottom: 0.5rem;">
                         <h4>{icon} {data_formatada} - {categoria}</h4>
                         <p><strong>📦 {descricao}</strong></p>
                         <p><strong>{valor_detalhes}</strong></p>
