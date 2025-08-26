@@ -23,17 +23,19 @@ st.markdown("""
         padding-top: 1rem;
     }
     .venda-card {
-        background-color: #f8f9fa;
+        background-color: #1a2e1a; /* Verde escuro */
+        color: #ffffff; /* Texto branco */
         padding: 1rem;
         border-radius: 0.5rem;
-        border-left: 4px solid #28a745;
+        border-left: 4px solid #28a745; /* Borda verde mantida */
         margin-bottom: 1rem;
     }
     .pendente-card {
-        background-color: #fff3cd;
+        background-color: #2a2a2a; /* Fundo escuro */
+        color: #ffffff; /* Texto branco */
         padding: 1rem;
         border-radius: 0.5rem;
-        border-left: 4px solid #ffc107;
+        border-left: 4px solid #ffc107; /* Borda amarela mantida */
         margin-bottom: 1rem;
     }
     .produto-item {
