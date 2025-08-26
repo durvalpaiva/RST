@@ -226,13 +226,44 @@ if st.session_state.show_form:
                 help="Nome específico do produto ou serviço adquirido"
             )
             
-            valor = st.number_input(
-                "💰 Valor (R$)",
-                min_value=0.01,
-                step=0.01,
-                format="%.2f",
-                help="Valor do custo"
-            )
+            # Campos para quantidade e valor unitário
+            col_qtd, col_unit = st.columns(2)
+            
+            with col_qtd:
+                quantidade = st.number_input(
+                    "📊 Quantidade",
+                    min_value=0.01,
+                    value=1.0,
+                    step=0.01,
+                    format="%.2f",
+                    help="Quantidade do produto/serviço"
+                )
+                
+                unidade_medida = st.selectbox(
+                    "📏 Unidade",
+                    ["UN", "KG", "L", "M", "M²", "M³", "T", "SC", "CX", "PC", "HR", "DIA"],
+                    help="Unidade de medida"
+                )
+            
+            with col_unit:
+                valor_unitario = st.number_input(
+                    "💰 Valor Unitário (R$)",
+                    min_value=0.01,
+                    step=0.01,
+                    format="%.2f",
+                    help="Valor por unidade do produto/serviço"
+                )
+                
+                # Calcular valor total automaticamente
+                valor_total = quantidade * valor_unitario
+                st.metric(
+                    "💰 Valor Total",
+                    f"R$ {valor_total:.2f}",
+                    help="Quantidade × Valor Unitário"
+                )
+            
+            # Usar valor_total ao invés de valor
+            valor = valor_total
         
         with col2:
             # Campos específicos para investimentos
@@ -371,7 +402,7 @@ if st.session_state.show_form:
         submitted = st.form_submit_button(f"💾 Salvar {tipo_custo}", use_container_width=True)
     
         if submitted:
-            if valor > 0 and descricao_item.strip():
+            if valor > 0 and descricao_item.strip() and quantidade > 0 and valor_unitario > 0:
                 try:
                     # Upload da imagem se fornecida
                     if uploaded_file:
@@ -390,6 +421,9 @@ if st.session_state.show_form:
                         'categoria': categoria,
                         'categoria_nome': categorias[categoria],
                         'descricao_item': descricao_item.strip(),
+                        'quantidade': float(quantidade),
+                        'unidade_medida': unidade_medida,
+                        'valor_unitario': float(valor_unitario),
                         'valor': float(valor),
                         'fornecedor': fornecedor.strip() if fornecedor else '',
                         'numero_nf': numero_nf.strip() if numero_nf else '',
@@ -397,7 +431,7 @@ if st.session_state.show_form:
                         'tem_nota_fiscal': bool(uploaded_file),
                         'observacoes': observacoes.strip(),
                         'timestamp': datetime.now().isoformat(),
-                        'app_version': 'RST_v2.1'
+                        'app_version': 'RST_v2.2'
                     }
                     
                     # Campos específicos para investimentos
@@ -437,6 +471,10 @@ if st.session_state.show_form:
                     st.warning("⚠️ Informe um valor maior que zero!")
                 if not descricao_item.strip():
                     st.warning("⚠️ A descrição do produto/serviço é obrigatória!")
+                if quantidade <= 0:
+                    st.warning("⚠️ A quantidade deve ser maior que zero!")
+                if valor_unitario <= 0:
+                    st.warning("⚠️ O valor unitário deve ser maior que zero!")
 
 # Tabela filtrada com dados dos custos
 st.subheader("📊 Dados dos Custos - Tabela Filtrável")
@@ -454,7 +492,10 @@ if custos_mes:
         'tipo_custo': 'Tipo',
         'categoria_nome': 'Categoria',
         'descricao_item': 'Produto/Serviço',
-        'valor': 'Valor (R$)',
+        'quantidade': 'Qtd',
+        'unidade_medida': 'Un.',
+        'valor_unitario': 'Valor Unit. (R$)',
+        'valor': 'Valor Total (R$)',
         'fornecedor': 'Fornecedor',
         'numero_nf': 'Nº NF',
         'tem_nota_fiscal': 'Com NF',
@@ -476,7 +517,7 @@ if custos_mes:
         colunas_selecionadas = st.multiselect(
             "📋 Colunas para Exibir",
             options=list(colunas_disponiveis.keys()),
-            default=['data_formatada', 'tipo_custo', 'categoria_nome', 'descricao_item', 'valor', 'fornecedor'],
+            default=['data_formatada', 'tipo_custo', 'categoria_nome', 'descricao_item', 'quantidade', 'unidade_medida', 'valor_unitario', 'valor', 'fornecedor'],
             format_func=lambda x: colunas_disponiveis[x],
             help="Escolha quais colunas mostrar na tabela"
         )
@@ -503,9 +544,13 @@ if custos_mes:
         # Renomear colunas para nomes mais amigáveis
         df_exibicao = df_exibicao.rename(columns=colunas_disponiveis)
         
-        # Formatar valores monetários
-        if 'Valor (R$)' in df_exibicao.columns:
-            df_exibicao['Valor (R$)'] = df_exibicao['Valor (R$)'].apply(lambda x: f"R$ {x:.2f}")
+        # Formatar valores monetários e quantidade
+        if 'Valor Total (R$)' in df_exibicao.columns:
+            df_exibicao['Valor Total (R$)'] = df_exibicao['Valor Total (R$)'].apply(lambda x: f"R$ {x:.2f}")
+        if 'Valor Unit. (R$)' in df_exibicao.columns:
+            df_exibicao['Valor Unit. (R$)'] = df_exibicao['Valor Unit. (R$)'].apply(lambda x: f"R$ {x:.2f}")
+        if 'Qtd' in df_exibicao.columns:
+            df_exibicao['Qtd'] = df_exibicao['Qtd'].apply(lambda x: f"{x:.2f}".rstrip('0').rstrip('.'))
         
         # Exibir tabela
         st.dataframe(
@@ -557,6 +602,9 @@ if custos_mes:
                 valor = custo.get('valor', 0)
                 categoria = custo.get('categoria_nome', 'N/A')
                 descricao = custo.get('descricao_item', 'Sem descrição')
+                quantidade = custo.get('quantidade', 1)
+                unidade = custo.get('unidade_medida', 'UN')
+                valor_unit = custo.get('valor_unitario', valor)
                 
                 # Ícone baseado no tipo
                 if tipo == 'Custos Fixos':
@@ -570,12 +618,15 @@ if custos_mes:
                     cor = "#17a2b8"  # Azul
                 
                 with st.container():
+                    # Formatear quantidade para exibição
+                    qtd_formatada = f"{quantidade:.2f}".rstrip('0').rstrip('.')
+                    
                     st.markdown(f"""
                     <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; 
                                 border-left: 4px solid {cor}; margin-bottom: 0.5rem;">
                         <h4>{icon} {data_formatada} - {categoria}</h4>
                         <p><strong>📦 {descricao}</strong></p>
-                        <p><strong>💰 R$ {valor:.2f}</strong></p>
+                        <p><strong>📊 {qtd_formatada} {unidade} × R$ {valor_unit:.2f} = 💰 R$ {valor:.2f}</strong></p>
                         <p><em>{custo.get('observacoes', 'Sem observações')}</em></p>
                         {f'<p><small>📉 Depreciação mensal: R$ {custo.get("depreciacao_mensal", 0):.2f}</small></p>' if tipo == 'Investimentos' and custo.get('depreciacao_mensal') else ''}
                     </div>
