@@ -112,6 +112,37 @@ def get_custos_mes_atual():
         st.error(f"Erro ao buscar custos: {e}")
         return []
 
+# Função para buscar fornecedores ativos
+@st.cache_data(ttl=60)
+def get_fornecedores_ativos():
+    try:
+        docs = db.collection('fornecedores').where(
+            'ativo', '==', True
+        ).order_by('nome').stream()
+        
+        fornecedores = []
+        for doc in docs:
+            data = doc.to_dict()
+            fornecedores.append({
+                'nome': data.get('nome', ''),
+                'tipo': data.get('tipo_fornecedor', ''),
+                'telefone': data.get('telefone', ''),
+                'id': doc.id
+            })
+        
+        return fornecedores
+    except Exception as e:
+        return []
+
+# Função para buscar fornecedor por nome (busca inteligente)
+def buscar_fornecedores(termo_busca):
+    fornecedores = get_fornecedores_ativos()
+    if not termo_busca:
+        return fornecedores
+    
+    termo = termo_busca.lower().strip()
+    return [f for f in fornecedores if termo in f['nome'].lower()]
+
 # Buscar custos do mês
 custos_mes = get_custos_mes_atual()
 
@@ -245,11 +276,65 @@ if st.session_state.show_form:
         col_nf1, col_nf2 = st.columns(2)
         
         with col_nf1:
-            fornecedor = st.text_input(
-                "🏪 Fornecedor",
-                placeholder="Nome do fornecedor",
-                help="Nome da empresa ou pessoa que emitiu a nota"
+            st.markdown("**🏪 Fornecedor**")
+            
+            # Busca inteligente de fornecedores
+            termo_busca = st.text_input(
+                "Digite para buscar fornecedor:",
+                placeholder="Digite parte do nome do fornecedor...",
+                help="Busca inteligente entre fornecedores cadastrados",
+                label_visibility="collapsed"
             )
+            
+            # Buscar fornecedores
+            fornecedores_encontrados = buscar_fornecedores(termo_busca)
+            fornecedor_selecionado = None
+            
+            if termo_busca and fornecedores_encontrados:
+                # Mostrar lista de fornecedores encontrados
+                st.markdown("**📋 Fornecedores encontrados:**")
+                for i, forn in enumerate(fornecedores_encontrados[:5]):  # Máximo 5 sugestões
+                    nome = forn['nome']
+                    tipo = forn['tipo']
+                    telefone = forn['telefone']
+                    
+                    col_info, col_btn = st.columns([3, 1])
+                    with col_info:
+                        st.markdown(f"**{nome}**")
+                        st.caption(f"{tipo} | {telefone}")
+                    with col_btn:
+                        if st.button("Selecionar", key=f"sel_forn_{i}", type="primary", use_container_width=True):
+                            st.session_state[f'fornecedor_selecionado'] = nome
+                            st.rerun()
+                
+                if len(fornecedores_encontrados) > 5:
+                    st.info(f"+ {len(fornecedores_encontrados) - 5} fornecedores. Refine a busca.")
+            
+            elif termo_busca and not fornecedores_encontrados:
+                st.warning(f"⚠️ Nenhum fornecedor encontrado com '{termo_busca}'")
+                if st.button("➕ Cadastrar Novo Fornecedor", type="secondary", use_container_width=True):
+                    st.markdown("""
+                    **📝 Para cadastrar um novo fornecedor:**
+                    1. Acesse a aba "🏪 Fornecedores" no menu lateral
+                    2. Clique em "Abrir Formulário"
+                    3. Preencha os dados do fornecedor
+                    4. Volte para registrar o custo
+                    """)
+            
+            # Campo final do fornecedor (preenchido automaticamente ou manual)
+            fornecedor_final = st.session_state.get('fornecedor_selecionado', '')
+            if not fornecedor_final:
+                fornecedor_final = termo_busca
+            
+            # Mostrar fornecedor selecionado
+            if fornecedor_final:
+                st.success(f"✅ Fornecedor: **{fornecedor_final}**")
+                if st.button("🔄 Alterar Fornecedor", type="secondary"):
+                    if 'fornecedor_selecionado' in st.session_state:
+                        del st.session_state['fornecedor_selecionado']
+                    st.rerun()
+            
+            fornecedor = fornecedor_final
         
         with col_nf2:
             numero_nf = st.text_input(
