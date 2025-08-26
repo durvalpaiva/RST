@@ -37,7 +37,9 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     .produto-item {
-        background-color: #e9ecef;
+        background-color: #1e1e1e; /* Cinza escuro */
+        border: 1px solid #2c2c2c;
+        color: #ffffff; /* Texto branco para contraste */
         padding: 0.5rem;
         border-radius: 0.3rem;
         margin: 0.2rem 0;
