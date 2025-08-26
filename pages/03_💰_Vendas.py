@@ -358,7 +358,7 @@ if vendas_mes:
     with col_filtro3:
         filtro_status = st.selectbox(
             "📊 Status",
-            ["Todos", "Apenas Pagas", "Apenas Pendentes", "Apenas Consignadas"],
+            ["Todos", "Apenas Pagas", "Apenas Pendentes", "Apenas Consignadas", "Apenas Acertadas"],
             help="Filtrar por status de recebimento"
         )
     
@@ -379,6 +379,8 @@ if vendas_mes:
         vendas_filtradas = [v for v in vendas_filtradas if v.get('status_recebimento') == 'Pendente']
     elif filtro_status == "Apenas Consignadas":
         vendas_filtradas = [v for v in vendas_filtradas if v.get('status_recebimento') == 'Consignado']
+    elif filtro_status == "Apenas Acertadas":
+        vendas_filtradas = [v for v in vendas_filtradas if v.get('status_recebimento') == 'Acertado']
     
     if vendas_filtradas:
         st.markdown(f"**Encontradas: {len(vendas_filtradas)} vendas**")
@@ -402,6 +404,9 @@ if vendas_mes:
             elif status == "Consignado":
                 card_class = "pendente-card"  # Usar cor amarela para consignação
                 status_icon = "🚚"
+            elif status == "Acertado":
+                card_class = "venda-card"  # Verde para acertados
+                status_icon = "📊"
             else:
                 card_class = "pendente-card"
                 status_icon = "⏳"
@@ -423,6 +428,30 @@ if vendas_mes:
                             qtd = f"{produto['quantidade']:.2f}".rstrip('0').rstrip('.')
                             st.write(f"• **{produto['nome']}** - {qtd} {produto['unidade']} × R$ {produto['valor_unitario']:.2f} = R$ {produto['valor_total']:.2f}")
                 
+                # Mostrar informações do acerto se foi acertado
+                if status == "Acertado" and 'acerto_consumo' in venda:
+                    acerto = venda['acerto_consumo']
+                    with st.expander(f"📊 Ver acerto de consumo"):
+                        col_acerto1, col_acerto2, col_acerto3 = st.columns(3)
+                        
+                        with col_acerto1:
+                            st.metric("💰 Valor Recebido", f"R$ {acerto.get('valor_a_receber', 0):.2f}")
+                        
+                        with col_acerto2:
+                            st.metric("📉 Valor em Perdas", f"R$ {acerto.get('valor_perda', 0):.2f}")
+                        
+                        with col_acerto3:
+                            st.metric("📊 Eficiência", f"{acerto.get('eficiencia_percentual', 0):.1f}%")
+                        
+                        if acerto.get('observacoes_acerto'):
+                            st.write(f"**📝 Observações:** {acerto['observacoes_acerto']}")
+                        
+                        # Mostrar detalhes por produto
+                        if 'produtos_acerto' in acerto:
+                            st.markdown("**📦 Detalhes por produto:**")
+                            for prod in acerto['produtos_acerto']:
+                                st.write(f"• **{prod['nome']}**: Consumido {prod['quantidade_consumida']:.2f}, Perdido {prod['quantidade_perdida']:.2f}, Devolvido {prod['quantidade_devolvida']:.2f}")
+                
                 # Botões de ação
                 col_btn1, col_btn2, col_btn3 = st.columns(3)
                 
@@ -441,7 +470,8 @@ if vendas_mes:
                                 st.error(f"❌ Erro ao atualizar: {e}")
                     elif status == "Consignado":
                         if st.button(f"📊 Acertar Consumo", key=f"acerto_{venda['id']}", use_container_width=True):
-                            st.info("🚧 Funcionalidade de acerto será implementada em breve!")
+                            st.session_state[f'show_acerto_{venda["id"]}'] = True
+                            st.rerun()
                 
                 with col_btn2:
                     if st.button(f"📄 Detalhes", key=f"det_{venda['id']}", use_container_width=True):
@@ -460,6 +490,150 @@ if vendas_mes:
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"❌ Erro ao cancelar: {e}")
+                
+                # Formulário de Acerto de Consumo
+                if st.session_state.get(f'show_acerto_{venda["id"]}', False) and status == "Consignado":
+                    st.markdown("---")
+                    st.markdown(f"### 📊 **Acerto de Consumo - {numero}**")
+                    
+                    with st.form(f"acerto_form_{venda['id']}"):
+                        st.markdown("**📦 Informe o que aconteceu com cada produto:**")
+                        
+                        produtos_acerto = []
+                        total_a_receber = 0
+                        total_perda = 0
+                        
+                        for i, produto in enumerate(produtos):
+                            st.markdown(f"**🌱 {produto['nome']}** - Entregue: {produto['quantidade']:.2f} {produto['unidade']}")
+                            
+                            col_consumo1, col_consumo2, col_consumo3 = st.columns(3)
+                            
+                            with col_consumo1:
+                                qtd_consumida = st.number_input(
+                                    "✅ Consumido",
+                                    min_value=0.0,
+                                    max_value=float(produto['quantidade']),
+                                    value=0.0,
+                                    step=0.01,
+                                    format="%.2f",
+                                    key=f"consumido_{venda['id']}_{i}",
+                                    help="Quantidade vendida/consumida pelo cliente"
+                                )
+                            
+                            with col_consumo2:
+                                qtd_perdida = st.number_input(
+                                    "❌ Perdido",
+                                    min_value=0.0,
+                                    max_value=float(produto['quantidade']),
+                                    value=0.0,
+                                    step=0.01,
+                                    format="%.2f",
+                                    key=f"perdido_{venda['id']}_{i}",
+                                    help="Quantidade que estragou/deteriorou"
+                                )
+                            
+                            with col_consumo3:
+                                qtd_devolvida = produto['quantidade'] - qtd_consumida - qtd_perdida
+                                st.metric("🔄 Devolvido", f"{qtd_devolvida:.2f} {produto['unidade']}")
+                            
+                            # Validações
+                            if qtd_consumida + qtd_perdida > produto['quantidade']:
+                                st.error(f"⚠️ Total (consumido + perdido) não pode ser maior que {produto['quantidade']:.2f}")
+                            
+                            # Cálculos financeiros
+                            valor_receber = qtd_consumida * produto['valor_unitario']
+                            valor_perda = qtd_perdida * produto['valor_unitario']
+                            
+                            # Mostrar resumo do produto
+                            st.info(f"💰 A receber: R$ {valor_receber:.2f} | 📉 Perda: R$ {valor_perda:.2f}")
+                            
+                            produtos_acerto.append({
+                                'nome': produto['nome'],
+                                'quantidade_original': produto['quantidade'],
+                                'unidade': produto['unidade'],
+                                'valor_unitario': produto['valor_unitario'],
+                                'quantidade_consumida': qtd_consumida,
+                                'quantidade_perdida': qtd_perdida,
+                                'quantidade_devolvida': qtd_devolvida,
+                                'valor_a_receber': valor_receber,
+                                'valor_perda': valor_perda
+                            })
+                            
+                            total_a_receber += valor_receber
+                            total_perda += valor_perda
+                            
+                            st.markdown("---")
+                        
+                        # Resumo final
+                        st.markdown("### 💰 **Resumo do Acerto**")
+                        col_resumo1, col_resumo2, col_resumo3 = st.columns(3)
+                        
+                        with col_resumo1:
+                            st.metric("💰 Total a Receber", f"R$ {total_a_receber:.2f}")
+                        
+                        with col_resumo2:
+                            st.metric("📉 Total em Perdas", f"R$ {total_perda:.2f}")
+                        
+                        with col_resumo3:
+                            valor_original = venda.get('valor_total', 0)
+                            eficiencia = (total_a_receber / valor_original * 100) if valor_original > 0 else 0
+                            st.metric("📊 Eficiência", f"{eficiencia:.1f}%")
+                        
+                        # Observações do acerto
+                        observacoes_acerto = st.text_area(
+                            "📝 Observações do Acerto",
+                            placeholder="Motivos das perdas, condições dos produtos devolvidos, etc.",
+                            help="Registre informações importantes sobre o acerto"
+                        )
+                        
+                        # Botões do formulário
+                        col_btn_acerto1, col_btn_acerto2 = st.columns(2)
+                        
+                        with col_btn_acerto1:
+                            finalizar_acerto = st.form_submit_button("✅ Finalizar Acerto", type="primary", use_container_width=True)
+                        
+                        with col_btn_acerto2:
+                            if st.form_submit_button("❌ Cancelar", use_container_width=True):
+                                st.session_state[f'show_acerto_{venda["id"]}'] = False
+                                st.rerun()
+                        
+                        if finalizar_acerto:
+                            try:
+                                # Validar se pelo menos um produto foi consumido
+                                if total_a_receber <= 0:
+                                    st.warning("⚠️ Informe pelo menos uma quantidade consumida!")
+                                else:
+                                    # Preparar dados do acerto
+                                    acerto_data = {
+                                        'data_acerto': datetime.now().isoformat(),
+                                        'produtos_acerto': produtos_acerto,
+                                        'valor_original': float(valor_original),
+                                        'valor_a_receber': float(total_a_receber),
+                                        'valor_perda': float(total_perda),
+                                        'eficiencia_percentual': float(eficiencia),
+                                        'observacoes_acerto': observacoes_acerto.strip(),
+                                        'acertado_por': 'Sistema RST'  # Futuro: usuário logado
+                                    }
+                                    
+                                    # Atualizar venda no Firebase
+                                    db.collection('vendas').document(venda['id']).update({
+                                        'status_recebimento': 'Acertado',
+                                        'acerto_consumo': acerto_data,
+                                        'valor_final': float(total_a_receber)  # Valor real a receber
+                                    })
+                                    
+                                    st.success(f"✅ Acerto finalizado com sucesso!")
+                                    st.success(f"💰 Valor a receber: R$ {total_a_receber:.2f}")
+                                    st.success(f"📉 Total em perdas: R$ {total_perda:.2f}")
+                                    st.success(f"📊 Eficiência: {eficiencia:.1f}%")
+                                    
+                                    # Limpar estado e atualizar
+                                    st.session_state[f'show_acerto_{venda["id"]}'] = False
+                                    st.cache_data.clear()
+                                    st.rerun()
+                                    
+                            except Exception as e:
+                                st.error(f"❌ Erro ao finalizar acerto: {e}")
                 
                 st.markdown("---")
     else:
