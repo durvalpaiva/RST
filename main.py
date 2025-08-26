@@ -137,8 +137,19 @@ if st.button("📖 Teste: Ler dados do Firebase"):
 # Roadmap e próximos passos
 st.subheader("🗺️ Roadmap de Desenvolvimento")
 
-# Status atual
-st.success("✅ **Status Atual:** Sistema base funcionando - Firebase conectado!")
+# Status atual - Atualizado
+st.success("✅ **Status Atual:** Sistema completo de vendas e custos funcionando!")
+
+# Resumo das funcionalidades já implementadas
+st.info("""
+**🎉 FUNCIONALIDADES JÁ IMPLEMENTADAS:**
+- ✅ **Sistema de Custos**: Categorização contábil, fornecedores integrados, campos quantidade/valor unitário
+- ✅ **Cadastro de Fornecedores**: Busca inteligente, histórico de compras, controle ativo/inativo
+- ✅ **Sistema de Vendas**: Múltiplos produtos, consignação, controle de recebimentos
+- ✅ **Acerto de Consumo**: Sistema completo para produtos perecíveis com cálculo de perdas
+- ✅ **Interface Dark Mode**: Otimizada para todos os dispositivos
+- ✅ **Firebase Cloud**: Dados seguros na nuvem com cache inteligente
+""")
 
 # Abas para organizar informações
 tab1, tab2, tab3 = st.tabs(["📋 Próximos Passos", "🎯 Funcionalidades Planejadas", "💡 Ideias Futuras"])
@@ -147,50 +158,52 @@ with tab1:
     st.markdown("""
     ### 🚀 Próximas Implementações (Prioridade Alta)
     
-    **📊 Sistema de Custos (Expandir)**
-    - [ ] Categorização avançada (Fixos, Variáveis, Semi-variáveis)
-    - [ ] Análise de tendências e gráficos temporais
-    - [ ] Comparativo mensal/anual
-    - [ ] Alertas de gastos excessivos
+    **📊 Dashboard/Relatórios**
+    - [ ] Gráficos de pizza: Distribuição custos vs vendas
+    - [ ] Timeline de fluxo de caixa: Entradas e saídas por dia/mês
+    - [ ] Análise de rentabilidade: Por produto, cliente, fornecedor
+    - [ ] Meta vs Realizado: Estabelecer metas mensais
     
-    **📱 Produção e Lotes**
-    - [ ] Cadastro e controle de lotes/talhões
-    - [ ] Acompanhamento de plantio → colheita
-    - [ ] Controle de aplicações (defensivos, fertilizantes)
-    - [ ] Histórico produtivo por área
+    **👥 Cadastro de Clientes**
+    - [ ] Sistema similar aos fornecedores com busca inteligente
+    - [ ] Histórico completo de compras por cliente
+    - [ ] Preferências e produtos mais comprados
+    - [ ] Controle de crédito/limite para vendas a prazo
     
-    **💰 Sistema de Vendas**
-    - [ ] Registro de vendas e recebimentos
-    - [ ] Controle de clientes e contratos
-    - [ ] Relatórios de rentabilidade por cultura
-    - [ ] Fluxo de caixa projetado
+    **🔔 Notificações/Alertas**
+    - [ ] Vendas a vencer: Cobranças automáticas
+    - [ ] Consignações antigas: Que precisam ser acertadas
+    - [ ] Produtos em baixa: Análise de vendas
+    - [ ] Metas atingidas: Comemorações automáticas
     """)
 
 with tab2:
     st.markdown("""
-    ### 🎯 Módulos Planejados
+    ### 🎯 Funcionalidades Planejadas
+    
+    **🏪 Melhorias em Fornecedores**
+    - Histórico completo de compras por fornecedor
+    - Avaliação de fornecedores (qualidade, pontualidade, preços)
+    - Alertas para fornecedores inativos há muito tempo
+    - Ranking dos melhores fornecedores por categoria
+    
+    **📱 Experiência Mobile**
+    - Botões maiores para dispositivos touch
+    - Campos otimizados para teclado mobile
+    - Scanner QR/Barcode para produtos
+    - Camera integrada para captura de notas fiscais
+    
+    **📈 Analytics Avançado**
+    - Produtos mais rentáveis e análise de margens
+    - Clientes mais lucrativos e padrões de compra
+    - Sazonalidade: Padrões de venda por mês/trimestre
+    - Previsões com IA para estimar vendas futuras
     
     **🌾 Gestão Agrícola**
     - Calendário agrícola e cronograma de atividades
     - Controle de estoque (sementes, defensivos, fertilizantes)
-    - Monitoramento climático integrado
-    - Controle de máquinas e implementos
-    
-    **👥 Gestão de Pessoas**
-    - Controle de funcionários e prestadores
-    - Registro de horas trabalhadas
-    - Controle de EPIs e treinamentos
-    
-    **📈 Business Intelligence**
-    - Dashboard executivo com KPIs principais
-    - Análise de rentabilidade por hectare
-    - Comparativo com índices do setor
-    - Projeções e simulações de cenários
-    
-    **🔄 Integrações**
-    - API de cotações (CEPEA, CME)
-    - Dados meteorológicos (INMET)
-    - Bancos para conciliação financeira
+    - Controle de lotes/talhões de produção
+    - Acompanhamento plantio → colheita
     """)
 
 with tab3:
