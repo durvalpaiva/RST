@@ -486,6 +486,14 @@ if custos_mes:
     # Adicionar coluna de data formatada
     df_custos['data_formatada'] = pd.to_datetime(df_custos['data']).dt.strftime('%d/%m/%Y')
     
+    # Garantir que colunas novas existam (para compatibilidade com dados antigos)
+    if 'quantidade' not in df_custos.columns:
+        df_custos['quantidade'] = 1.0
+    if 'unidade_medida' not in df_custos.columns:
+        df_custos['unidade_medida'] = 'UN'
+    if 'valor_unitario' not in df_custos.columns:
+        df_custos['valor_unitario'] = df_custos['valor']
+    
     # Selector de colunas para exibir
     colunas_disponiveis = {
         'data_formatada': 'Data',
@@ -602,7 +610,7 @@ if custos_mes:
                 valor = custo.get('valor', 0)
                 categoria = custo.get('categoria_nome', 'N/A')
                 descricao = custo.get('descricao_item', 'Sem descrição')
-                quantidade = custo.get('quantidade', 1)
+                quantidade = custo.get('quantidade', 1.0)
                 unidade = custo.get('unidade_medida', 'UN')
                 valor_unit = custo.get('valor_unitario', valor)
                 
@@ -621,12 +629,18 @@ if custos_mes:
                     # Formatear quantidade para exibição
                     qtd_formatada = f"{quantidade:.2f}".rstrip('0').rstrip('.')
                     
+                    # Mostrar detalhes apenas se tiver dados de quantidade/valor unitário
+                    if 'quantidade' in custo and 'valor_unitario' in custo:
+                        valor_detalhes = f"📊 {qtd_formatada} {unidade} × R$ {valor_unit:.2f} = 💰 R$ {valor:.2f}"
+                    else:
+                        valor_detalhes = f"💰 R$ {valor:.2f}"
+                    
                     st.markdown(f"""
                     <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; 
                                 border-left: 4px solid {cor}; margin-bottom: 0.5rem;">
                         <h4>{icon} {data_formatada} - {categoria}</h4>
                         <p><strong>📦 {descricao}</strong></p>
-                        <p><strong>📊 {qtd_formatada} {unidade} × R$ {valor_unit:.2f} = 💰 R$ {valor:.2f}</strong></p>
+                        <p><strong>{valor_detalhes}</strong></p>
                         <p><em>{custo.get('observacoes', 'Sem observações')}</em></p>
                         {f'<p><small>📉 Depreciação mensal: R$ {custo.get("depreciacao_mensal", 0):.2f}</small></p>' if tipo == 'Investimentos' and custo.get('depreciacao_mensal') else ''}
                     </div>
